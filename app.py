@@ -16,7 +16,7 @@ ctk.set_appearance_mode("System")
 # Supported themes : green, dark-blue, blue
 ctk.set_default_color_theme("blue")
 
-appWidth, appHeight = 1400, 400
+appWidth, appHeight = 1400, 420
 
 # Scrollable frame class
 class TableFrame(ctk.CTkScrollableFrame):
@@ -37,8 +37,10 @@ class App(ctk.CTk):
         self.tenant_id = 0
         self.region_id = 0
         self.site_id = 0
+        self.status = "all"
         header = [
             "Name",
+            "Status",
             "Model/Type",
             "Mgmt IP",
             "Tenant",
@@ -47,11 +49,16 @@ class App(ctk.CTk):
             "Serial",
             "Primary Device",
         ]
+        self.status_values = {
+            "All": "all",
+            "Active": "active",
+            "Offline": "offline"
+        }
 
         # create sidebar frame with widgets
         self.sidebar_frame = ctk.CTkFrame(self, width=200, corner_radius=5)
         self.sidebar_frame.grid(
-            row=0, column=0, rowspan=9, padx=(10, 0), pady=(10, 0), sticky="nsew"
+            row=0, column=0, rowspan=10, padx=(10, 0), pady=(10, 0), sticky="nsew"
         )
         self.sidebar_frame.grid_rowconfigure(4, weight=1)
 
@@ -99,7 +106,7 @@ class App(ctk.CTk):
             self.sidebar_frame, text="Load Data", command=self.load_data
         )
         self.load_data_button.grid(
-            row=7, column=0, columnspan=1, padx=5, pady=5, sticky="ew"
+            row=11, column=0, columnspan=1, padx=5, pady=5, sticky="ew"
         )
         self.load_data_button.configure(state="disabled")
 
@@ -108,17 +115,36 @@ class App(ctk.CTk):
             self.sidebar_frame, text="Save Data", command=self.save_sheet
         )
         self.save_data_button.grid(
-            row=8, column=0, columnspan=1, padx=5, pady=5, sticky="ew"
+            row=12, column=0, columnspan=1, padx=5, pady=5, sticky="ew"
         )
         self.save_data_button.configure(state="disabled")
 
+        # Device Checkbox
+        self.checkbox_device_var = tk.StringVar()
+        self.checkbox_device_var.set("on")
+        self.checkbox_device = ctk.CTkCheckBox(master=self.sidebar_frame, text="Devices", variable=self.checkbox_device_var, onvalue="on", offvalue="off")
+        self.checkbox_device.grid(row=8, column=0, pady=(5, 0), padx=5, sticky="wn")
+
+        # Context Checkbox
+        self.checkbox_context_var = tk.StringVar()
+        self.checkbox_context_var.set("on")
+        self.checkbox_context = ctk.CTkCheckBox(master=self.sidebar_frame, text="Context", variable=self.checkbox_context_var, onvalue="on", offvalue="off")
+        self.checkbox_context.grid(row=9, column=0, pady=(5, 0), padx=5, sticky="wn")
+
+        # Virtual-Machine Checkbox
+        self.checkbox_vm_var = tk.StringVar()
+        self.checkbox_vm_var.set("on")
+        self.checkbox_vm = ctk.CTkCheckBox(master=self.sidebar_frame, text="Virtual-Machine", variable=self.checkbox_vm_var, onvalue="on", offvalue="off")
+        self.checkbox_vm.grid(row=10, column=0, pady=(5, 0), padx=5, sticky="wn")
+
         # Tenant Group Drowndown
-        self.tenant_group_option_menu_var = ctk.StringVar(value="select")
+        self.tenant_group_option_menu_var = ctk.StringVar(value="Tenant Group")
         self.tenant_group_option_menu = ctk.CTkOptionMenu(
             self.sidebar_frame,
             values=[],
             command=self.tenant_groups_dropdown_callback,
             variable=self.tenant_group_option_menu_var,
+            anchor=ctk.CENTER
         )
         self.tenant_group_option_menu.grid(
             row=3, column=0, columnspan=1, padx=5, pady=5, sticky="new"
@@ -126,12 +152,13 @@ class App(ctk.CTk):
         self.tenant_group_option_menu.configure(state="disabled")
 
         # Tenant Dropdown
-        self.tenant_option_menu_var = ctk.StringVar(value="all")
+        self.tenant_option_menu_var = ctk.StringVar(value="Tenant")
         self.tenant_option_menu = ctk.CTkOptionMenu(
             self.sidebar_frame,
             values=[],
             command=self.tenants_dropdown_callback,
             variable=self.tenant_option_menu_var,
+            anchor=ctk.CENTER
         )
         self.tenant_option_menu.grid(
             row=4, column=0, columnspan=1, padx=5, pady=5, sticky="ew"
@@ -139,12 +166,13 @@ class App(ctk.CTk):
         self.tenant_option_menu.configure(state="disabled")
 
         # Region Dropdown
-        self.region_option_menu_var = ctk.StringVar(value="all")
+        self.region_option_menu_var = ctk.StringVar(value="Region")
         self.region_option_menu = ctk.CTkOptionMenu(
             self.sidebar_frame,
             values=[],
             command=self.region_dropdown_callback,
             variable=self.region_option_menu_var,
+            anchor=ctk.CENTER
         )
         self.region_option_menu.grid(
             row=5, column=0, columnspan=1, padx=5, pady=5, sticky="ew"
@@ -152,17 +180,32 @@ class App(ctk.CTk):
         self.region_option_menu.configure(state="disabled")
 
         # Site Dropdown
-        self.site_option_menu_var = ctk.StringVar(value="all")
+        self.site_option_menu_var = ctk.StringVar(value="Site")
         self.site_option_menu = ctk.CTkOptionMenu(
             self.sidebar_frame,
             values=[],
             command=self.site_dropdown_callback,
             variable=self.site_option_menu_var,
+            anchor=ctk.CENTER
         )
         self.site_option_menu.grid(
             row=6, column=0, columnspan=1, padx=5, pady=5, sticky="ew"
         )
         self.site_option_menu.configure(state="disabled")
+
+        # Status Dropdown
+        self.status_option_menu_var = ctk.StringVar(value="Status")
+        self.status_option_menu = ctk.CTkOptionMenu(
+            self.sidebar_frame,
+            values=list(self.status_values.keys()),
+            command=self.status_dropdown_callback,
+            variable=self.status_option_menu_var,
+            anchor=ctk.CENTER
+        )
+        self.status_option_menu.grid(
+            row=7, column=0, columnspan=1, padx=5, pady=5, sticky="ew"
+        )
+        self.status_option_menu.configure(state="disabled")
 
         # Data Sheet
         self.sheet = Sheet(
@@ -181,6 +224,7 @@ class App(ctk.CTk):
             hdisp=False,
             idisp=False,
         )
+
 
     def connect_to_server(self):
         if (url := self.url_entry.get()) and (token := self.token_entry.get()):
@@ -201,6 +245,7 @@ class App(ctk.CTk):
                     values=tenant_groups, state="normal"
                 )
                 self.region_option_menu.configure(values=regions, state="normal")
+                self.status_option_menu.configure(state="normal")
 
             except Exception as e:
                 tk.messagebox.showerror("Python Error", message=e)
@@ -236,6 +281,9 @@ class App(ctk.CTk):
     def site_dropdown_callback(self, choice):
         self.site_id = self.sites[choice]
 
+    def status_dropdown_callback(self, choice):
+        self.status = self.status_values[choice]
+
     def load_data(self):
         query_params = {}
         if self.tenant_group_id != 0:
@@ -246,60 +294,68 @@ class App(ctk.CTk):
             query_params["region_id"] = self.region_id
         if self.site_id != 0:
             query_params["site_id"] = self.site_id
+        if self.status != "all":
+            query_params["status"] = self.status
         pprint(query_params)
+        value_list = []
         try:
-            devices = list(self.nb.dcim.devices.filter(**query_params))
-            print(len(devices))
-            contexts = self.nb.dcim.virtual_device_contexts.filter(**query_params)
-            print(len(contexts))
-            vms = self.nb.virtualization.virtual_machines.filter(**query_params)
-            print(len(vms))
-
-            value_list = []
-            for device in devices:
-                region = self.get_region_by_site_id(device.site.id)
-                values = [
-                    device.name,
-                    device.device_type,
-                    device.primary_ip,
-                    device.tenant,
-                    device.site,
-                    region,
-                    device.serial,
-                    "N/A",
-                ]
-                value_list.append(values)
-            for context in contexts:
-                location_data = self.get_device_details_by_device_id(context.device.id)
-                values = [
-                    context.name,
-                    "device-context",
-                    context.primary_ip,
-                    context.tenant,
-                    location_data["site"],
-                    location_data["region"],
-                    "N/A",
-                    context.device.name,
-                ]
-                value_list.append(values)
-            for vm in vms:
-                if site := vm.site:
-                    region = self.get_region_by_site_id(vm.site.id)
-                    site = site.name
-                else:
-                    region = "N/A"
-                    site = "N/A"
-                values = [
-                    vm.name,
-                    "virtual-machine",
-                    vm.primary_ip,
-                    vm.tenant,
-                    site,
-                    region,
-                    "N/A",
-                    "N/A",
-                ]
-                value_list.append(values)
+            # Pull and process devices
+            if self.checkbox_device_var.get() == "on":
+                devices = list(self.nb.dcim.devices.filter(**query_params))
+                for device in devices:
+                    region = self.get_region_by_site_id(device.site.id)
+                    values = [
+                        device.name,
+                        device.status,
+                        device.device_type,
+                        device.primary_ip,
+                        device.tenant,
+                        device.site,
+                        region,
+                        device.serial,
+                        "N/A",
+                    ]
+                    value_list.append(values)
+            # Pull and process virtual device context
+            if self.checkbox_context_var.get() == "on":
+                contexts = self.nb.dcim.virtual_device_contexts.filter(**query_params)
+                for context in contexts:
+                    location_data = self.get_device_details_by_device_id(context.device.id)
+                    values = [
+                        context.name,
+                        context.status,
+                        "device-context",
+                        context.primary_ip,
+                        context.tenant,
+                        location_data["site"],
+                        location_data["region"],
+                        "N/A",
+                        context.device.name,
+                    ]
+                    value_list.append(values)
+            # Pull and process virtual-machines
+            if self.checkbox_vm_var.get() == "on":
+                vms = self.nb.virtualization.virtual_machines.filter(**query_params)
+                for vm in vms:
+                    if site := vm.site:
+                        region = self.get_region_by_site_id(vm.site.id)
+                        site = site.name
+                    else:
+                        region = "N/A"
+                        site = "N/A"
+                    values = [
+                        vm.name,
+                        vm.status,
+                        "virtual-machine",
+                        vm.primary_ip,
+                        vm.tenant,
+                        site,
+                        region,
+                        "N/A",
+                        "N/A",
+                    ]
+                    value_list.append(values)
+            # Set list values and enable Save button
             self.sheet.set_sheet_data(value_list)
             self.save_data_button.configure(state="normal")
 
